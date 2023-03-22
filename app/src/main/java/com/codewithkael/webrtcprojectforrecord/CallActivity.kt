@@ -21,6 +21,8 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
 
     lateinit var binding : ActivityCallBinding
     private var userName:String?=null
+    private var serverIp:String?=null
+    private var serverPort:String?=null
     private var socketRepository:SocketRepository?=null
     private var rtcClient : RTCClient?=null
     private val TAG = "CallActivity"
@@ -43,8 +45,10 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
 
     private fun init(){
         userName = intent.getStringExtra("username")
+        serverIp = intent.getStringExtra("server_ip")
+        serverPort = intent.getStringExtra("server_port")
         socketRepository = SocketRepository(this)
-        userName?.let { socketRepository?.initSocket(it) }
+        userName?.let { socketRepository?.initSocket(it, serverIp, serverPort) }
         rtcClient = RTCClient(application,userName!!,socketRepository!!, object : PeerConnectionObserver() {
             override fun onIceCandidate(p0: IceCandidate?) {
                 super.onIceCandidate(p0)

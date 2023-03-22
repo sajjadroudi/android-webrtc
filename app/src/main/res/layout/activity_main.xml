@@ -1,25 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="username"
-        android:layout_alignParentTop="true"
-        android:layout_marginHorizontal="30dp"
-        android:layout_marginTop="30dp"
-        android:id="@+id/username" />
-    <androidx.appcompat.widget.AppCompatButton
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:text="enter"
-        android:id="@+id/enterBtn"
-        android:layout_below="@id/username"
-        android:layout_marginHorizontal="30dp"/>
+    <data>
+        <import type="com.codewithkael.webrtcprojectforrecord.Config"/>
+    </data>
 
-</RelativeLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".MainActivity"
+        android:orientation="vertical">
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="username"
+            android:layout_marginHorizontal="30dp"
+            android:layout_marginTop="30dp"
+            android:id="@+id/username" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="server ip"
+            android:text="@{Config.SERVER_IP}"
+            android:layout_marginHorizontal="30dp"
+            android:layout_marginTop="30dp"
+            android:id="@+id/edt_server_ip" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="server port"
+            android:text="@{Config.SERVER_PORT}"
+            android:layout_marginHorizontal="30dp"
+            android:layout_marginTop="30dp"
+            android:id="@+id/edt_server_port" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:text="enter"
+            android:id="@+id/enterBtn"
+            android:layout_marginHorizontal="30dp"/>
+
+    </LinearLayout>
+
+</layout>

@@ -7,7 +7,7 @@ android {
     namespace 'com.codewithkael.webrtcprojectforrecord'
     compileSdk 32
     buildFeatures {
-        viewBinding = true
+        dataBinding true
     }
     defaultConfig {
         applicationId "com.codewithkael.webrtcprojectforrecord"

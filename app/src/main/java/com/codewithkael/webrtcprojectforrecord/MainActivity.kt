@@ -23,8 +23,8 @@ class MainActivity : AppCompatActivity() {
                 ).request{ allGranted, _ ,_ ->
                     if (allGranted){
                         startActivity(
-                            Intent(this,CallActivity::class.java)
-                                .putExtra("username",binding.username.text.toString())
+                            Intent(this, CallActivity::class.java)
+                                .putExtras(extractBundle())
                         )
                     } else {
                         Toast.makeText(this,"you should accept all permissions",Toast.LENGTH_LONG).show()
@@ -34,4 +34,17 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+
+    private fun extractBundle(): Bundle {
+        val userName = binding.username.text.toString()
+        val serverIp = binding.edtServerIp.text.toString()
+        val serverPort = binding.edtServerPort.text.toString()
+
+        return Bundle().apply {
+            putString("username", userName)
+            putString("server_ip", serverIp)
+            putString("server_port", serverPort)
+        }
+    }
+
 }
