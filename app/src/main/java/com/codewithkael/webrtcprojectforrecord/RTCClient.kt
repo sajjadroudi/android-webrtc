@@ -8,6 +8,8 @@ class RTCClient(
     private val application: Application,
     private val username: String,
     private val socketRepository: SocketRepository,
+    private val localView: SurfaceViewRenderer,
+    private val remoteView: SurfaceViewRenderer,
     private val observer: PeerConnection.Observer
 ) {
 
@@ -23,15 +25,14 @@ class RTCClient(
         PeerConnection.IceServer("turn:openrelay.metered.ca:80","openrelayproject","openrelayproject"),
         PeerConnection.IceServer("turn:openrelay.metered.ca:443","openrelayproject","openrelayproject"),
         PeerConnection.IceServer("turn:openrelay.metered.ca:443?transport=tcp","openrelayproject","openrelayproject"),
-
-        )
+    )
     private val peerConnection by lazy { createPeerConnection(observer) }
     private val localVideoSource by lazy { peerConnectionFactory.createVideoSource(false) }
     private val localAudioSource by lazy { peerConnectionFactory.createAudioSource(MediaConstraints()) }
     private var videoCapturer: CameraVideoCapturer? = null
     private var localAudioTrack: AudioTrack? = null
     private var localVideoTrack: VideoTrack? = null
-
+    private var surfaceTextureHelper: SurfaceTextureHelper? = null
 
     private fun initPeerConnectionFactory(application: Application) {
         val peerConnectionOption = PeerConnectionFactory.InitializationOptions.builder(application)
@@ -62,7 +63,15 @@ class RTCClient(
         return peerConnectionFactory.createPeerConnection(iceServer, observer)
     }
 
-    fun initializeSurfaceView(surface: SurfaceViewRenderer) {
+    fun setupLocalView() {
+        initializeSurfaceView(localView)
+    }
+
+    fun setupRemoteView() {
+        initializeSurfaceView(remoteView)
+    }
+
+    private fun initializeSurfaceView(surface: SurfaceViewRenderer) {
         surface.run {
             setEnableHardwareScaler(true)
             setMirror(true)
@@ -70,17 +79,17 @@ class RTCClient(
         }
     }
 
-    fun startLocalVideo(surface: SurfaceViewRenderer) {
-        val surfaceTextureHelper =
-            SurfaceTextureHelper.create(Thread.currentThread().name, eglContext.eglBaseContext)
+    fun startLocalVideo() {
+        surfaceTextureHelper = SurfaceTextureHelper.create(Thread.currentThread().name, eglContext.eglBaseContext)
         videoCapturer = getVideoCapturer(application)
         videoCapturer?.initialize(
             surfaceTextureHelper,
-            surface.context, localVideoSource.capturerObserver
+            localView.context,
+            localVideoSource.capturerObserver
         )
         videoCapturer?.startCapture(320, 240, 30)
         localVideoTrack = peerConnectionFactory.createVideoTrack("local_track", localVideoSource)
-        localVideoTrack?.addSink(surface)
+        localVideoTrack?.addSink(localView)
         localAudioTrack =
             peerConnectionFactory.createAudioTrack("local_track_audio", localAudioSource)
         val localStream = peerConnectionFactory.createLocalMediaStream("local_stream")
@@ -88,7 +97,6 @@ class RTCClient(
         localStream.addTrack(localVideoTrack)
 
         peerConnection?.addStream(localStream)
-
     }
 
     private fun getVideoCapturer(application: Application): CameraVideoCapturer {
@@ -105,7 +113,6 @@ class RTCClient(
     fun call(target: String) {
         val mediaConstraints = MediaConstraints()
         mediaConstraints.mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-
 
         peerConnection?.createOffer(object : SdpObserver {
             override fun onCreateSuccess(desc: SessionDescription?) {
@@ -229,5 +236,38 @@ class RTCClient(
 
     fun endCall() {
         peerConnection?.close()
+        cleanUp()
     }
+
+    private fun cleanUp() {
+        peerConnection?.close()
+        peerConnection?.dispose()
+
+        videoCapturer?.dispose()
+        videoCapturer = null
+
+        localAudioSource?.dispose()
+        localVideoSource?.dispose()
+
+        localView.release()
+        remoteView.release()
+
+        tryToDo { localAudioTrack?.dispose() }
+        tryToDo { localVideoTrack?.dispose() }
+
+        eglContext.release()
+
+        peerConnectionFactory.dispose()
+
+        surfaceTextureHelper?.dispose()
+    }
+
+    private fun tryToDo(block: () -> Unit) {
+        try {
+            block()
+        } catch (th: Throwable) {
+            th.printStackTrace()
+        }
+    }
+
 }

@@ -1,10 +1,12 @@
 package com.codewithkael.webrtcprojectforrecord
 
-import androidx.appcompat.app.AppCompatActivity
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.codewithkael.webrtcprojectforrecord.databinding.ActivityCallBinding
 import com.codewithkael.webrtcprojectforrecord.models.IceCandidateModel
 import com.codewithkael.webrtcprojectforrecord.models.MessageModel
@@ -43,13 +45,10 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
 
     }
 
-    private fun init(){
-        userName = intent.getStringExtra("username")
-        serverIp = intent.getStringExtra("server_ip")
-        serverPort = intent.getStringExtra("server_port")
-        socketRepository = SocketRepository(this)
-        userName?.let { socketRepository?.initSocket(it, serverIp, serverPort) }
-        rtcClient = RTCClient(application,userName!!,socketRepository!!, object : PeerConnectionObserver() {
+    private fun initWebRtcClient() {
+        rtcClient = null
+
+        rtcClient = RTCClient(application,userName!!,socketRepository!!, binding.localView, binding.remoteView, object : PeerConnectionObserver() {
             override fun onIceCandidate(p0: IceCandidate?) {
                 super.onIceCandidate(p0)
                 rtcClient?.addIceCandidate(p0)
@@ -72,8 +71,16 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
 
             }
         })
-        rtcAudioManager.setDefaultAudioDevice(RTCAudioManager.AudioDevice.SPEAKER_PHONE)
+    }
 
+    private fun init(){
+        userName = intent.getStringExtra("username")
+        serverIp = intent.getStringExtra("server_ip")
+        serverPort = intent.getStringExtra("server_port")
+        socketRepository = SocketRepository(this)
+        userName?.let { socketRepository?.initSocket(it, serverIp, serverPort) }
+
+        rtcAudioManager.setDefaultAudioDevice(RTCAudioManager.AudioDevice.SPEAKER_PHONE)
 
         binding.apply {
             callBtn.setOnClickListener {
@@ -127,6 +134,7 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                 setWhoToCallLayoutVisible()
                 setIncomingCallLayoutGone()
                 rtcClient?.endCall()
+                rtcClient = null
             }
         }
 
@@ -148,13 +156,14 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                         setWhoToCallLayoutGone()
                         setCallLayoutVisible()
                         binding.apply {
-                            rtcClient?.initializeSurfaceView(localView)
-                            rtcClient?.initializeSurfaceView(remoteView)
-                            rtcClient?.startLocalVideo(localView)
+                            initWebRtcClient()
+                            rtcClient?.setupLocalView()
+                            rtcClient?.setupRemoteView()
+                            rtcClient?.startLocalVideo()
                             rtcClient?.call(targetUserNameEt.text.toString())
                         }
-
-
+                        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                        imm.hideSoftInputFromWindow(binding.targetUserNameEt.windowToken, 0)
                     }
 
                 }
@@ -180,9 +189,10 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                         setWhoToCallLayoutGone()
 
                         binding.apply {
-                            rtcClient?.initializeSurfaceView(localView)
-                            rtcClient?.initializeSurfaceView(remoteView)
-                            rtcClient?.startLocalVideo(localView)
+                            initWebRtcClient()
+                            rtcClient?.setupLocalView()
+                            rtcClient?.setupRemoteView()
+                            rtcClient?.startLocalVideo()
                         }
                         val session = SessionDescription(
                             SessionDescription.Type.OFFER,
@@ -195,6 +205,13 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
 
                     }
                     binding.rejectButton.setOnClickListener {
+                        rtcClient?.endCall()
+                        rtcClient = null
+                        val rejectedUser = message.name.toString()
+                        Log.i("rouditest", "onNewMessage: rejectedUser: $rejectedUser")
+                        socketRepository?.sendMessageToSocket(MessageModel(
+                            "reject", userName, rejectedUser,null
+                        ))
                         setIncomingCallLayoutGone()
                     }
 
@@ -212,6 +229,17 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                 }catch (e:Exception){
                     e.printStackTrace()
                 }
+            }
+
+            "call_rejected" -> {
+                runOnUiThread {
+                    binding.remoteViewLoading.visibility = View.GONE
+                    setCallLayoutGone()
+                    setWhoToCallLayoutVisible()
+                }
+
+                rtcClient?.endCall()
+                rtcClient = null
             }
         }
     }

@@ -26,7 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="server ip"
-            android:text="@{Config.SERVER_IP}"
+            android:text="@{Config.INSTANCE.SERVER_IP}"
             android:layout_marginHorizontal="30dp"
             android:layout_marginTop="30dp"
             android:id="@+id/edt_server_ip" />

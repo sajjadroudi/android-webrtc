@@ -89,6 +89,16 @@ webSocket.on('request',(req)=>{
                 }
             break
 
+            case "reject":
+                let rejectedUser = findUser(data.target)
+
+                if (rejectedUser){
+                    rejectedUser.conn.send(JSON.stringify({
+                        type:"call_rejected"
+                    }))
+                }
+
+            break
 
         }
 
