@@ -100,6 +100,17 @@ webSocket.on('request',(req)=>{
 
             break
 
+            case "end_call":
+                const targetUser = findUser(data.target)
+                
+                if(targetUser) {
+                    targetUser.conn.send(JSON.stringify({
+                        type: "call_ended"
+                    }))
+                }
+
+            break;
+
         }
 
     })

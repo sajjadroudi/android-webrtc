@@ -133,6 +133,7 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                 setCallLayoutGone()
                 setWhoToCallLayoutVisible()
                 setIncomingCallLayoutGone()
+                socketRepository?.sendMessageToSocket(MessageModel("end_call",userName,target,null))
                 rtcClient?.endCall()
                 rtcClient = null
             }
@@ -235,6 +236,18 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                 runOnUiThread {
                     binding.remoteViewLoading.visibility = View.GONE
                     setCallLayoutGone()
+                    setWhoToCallLayoutVisible()
+                }
+
+                rtcClient?.endCall()
+                rtcClient = null
+            }
+
+            "call_ended" -> {
+                runOnUiThread {
+                    binding.remoteViewLoading.visibility = View.GONE
+                    setCallLayoutGone()
+                    setIncomingCallLayoutGone()
                     setWhoToCallLayoutVisible()
                 }
 
