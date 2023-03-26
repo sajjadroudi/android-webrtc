@@ -10,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.codewithkael.webrtcprojectforrecord.databinding.ActivityCallBinding
 import com.codewithkael.webrtcprojectforrecord.models.IceCandidateModel
 import com.codewithkael.webrtcprojectforrecord.models.MessageModel
+import com.codewithkael.webrtcprojectforrecord.models.SentWebRtcEvent
+import com.codewithkael.webrtcprojectforrecord.models.SentWebRtcEventType.*
 import com.codewithkael.webrtcprojectforrecord.utils.NewMessageInterface
 import com.codewithkael.webrtcprojectforrecord.utils.PeerConnectionObserver
 import com.codewithkael.webrtcprojectforrecord.utils.RTCAudioManager
@@ -26,7 +28,7 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
     private var serverIp:String?=null
     private var serverPort:String?=null
     private var socketRepository:SocketRepository?=null
-    private var rtcClient : RTCClient?=null
+    private var rtcClient : WebRtcClient?=null
     private val TAG = "CallActivity"
     private var target:String = ""
     private val gson = Gson()
@@ -48,20 +50,14 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
     private fun initWebRtcClient() {
         rtcClient = null
 
-        rtcClient = RTCClient(application,userName!!,socketRepository!!, binding.localView, binding.remoteView, object : PeerConnectionObserver() {
+        rtcClient = WebRtcClient(application,userName!!,socketRepository!!, binding.localView, binding.remoteView, object : PeerConnectionObserver() {
             override fun onIceCandidate(p0: IceCandidate?) {
                 super.onIceCandidate(p0)
                 rtcClient?.addIceCandidate(p0)
-                val candidate = hashMapOf(
-                    "sdpMid" to p0?.sdpMid,
-                    "sdpMLineIndex" to p0?.sdpMLineIndex,
-                    "sdpCandidate" to p0?.sdp
-                )
 
-                socketRepository?.sendMessageToSocket(
-                    MessageModel("ice_candidate",userName,target,candidate)
-                )
-
+                val iceCandidate = IceCandidateModel(p0?.sdpMid, p0?.sdpMLineIndex, p0?.sdp)
+                val sentWebRtcEvent = SentWebRtcEvent(ICE_CANDIDATE, userName!!, target, iceCandidate)
+                socketRepository?.sendMessageToSocket(sentWebRtcEvent)
             }
 
             override fun onAddStream(p0: MediaStream?) {
@@ -84,10 +80,9 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
 
         binding.apply {
             callBtn.setOnClickListener {
-                socketRepository?.sendMessageToSocket(MessageModel(
-                    "start_call",userName,targetUserNameEt.text.toString(),null
-                ))
                 target = targetUserNameEt.text.toString()
+                val sentWebRtcEvent = SentWebRtcEvent<Nothing>(START_CALL, userName!!, target)
+                socketRepository?.sendMessageToSocket(sentWebRtcEvent)
             }
 
             switchCameraButton.setOnClickListener {
@@ -133,7 +128,10 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                 setCallLayoutGone()
                 setWhoToCallLayoutVisible()
                 setIncomingCallLayoutGone()
-                socketRepository?.sendMessageToSocket(MessageModel("end_call",userName,target,null))
+
+                val sentWebRtcEvent = SentWebRtcEvent<Nothing>(END_CALL, userName!!, target)
+                socketRepository?.sendMessageToSocket(sentWebRtcEvent)
+
                 rtcClient?.endCall()
                 rtcClient = null
             }
@@ -208,11 +206,11 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                     binding.rejectButton.setOnClickListener {
                         rtcClient?.endCall()
                         rtcClient = null
+
                         val rejectedUser = message.name.toString()
-                        Log.i("rouditest", "onNewMessage: rejectedUser: $rejectedUser")
-                        socketRepository?.sendMessageToSocket(MessageModel(
-                            "reject", userName, rejectedUser,null
-                        ))
+                        val sentWebRtcEvent = SentWebRtcEvent<Nothing>(REJECT, userName!!, rejectedUser)
+                        socketRepository?.sendMessageToSocket(sentWebRtcEvent)
+
                         setIncomingCallLayoutGone()
                     }
 
@@ -225,8 +223,13 @@ class CallActivity : AppCompatActivity(), NewMessageInterface {
                 try {
                     val receivingCandidate = gson.fromJson(gson.toJson(message.data),
                         IceCandidateModel::class.java)
-                    rtcClient?.addIceCandidate(IceCandidate(receivingCandidate.sdpMid,
-                        Math.toIntExact(receivingCandidate.sdpMLineIndex.toLong()),receivingCandidate.sdpCandidate))
+                    val sdpMLineIndex = Math.toIntExact((receivingCandidate.sdpMLineIndex ?: 0).toLong())
+                    val iceCandidate = IceCandidate(
+                        receivingCandidate.sdpMid,
+                        sdpMLineIndex,
+                        receivingCandidate.sdpCandidate
+                    )
+                    rtcClient?.addIceCandidate(iceCandidate)
                 }catch (e:Exception){
                     e.printStackTrace()
                 }

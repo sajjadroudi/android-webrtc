@@ -1,10 +1,12 @@
 package com.codewithkael.webrtcprojectforrecord
 
 import android.app.Application
-import com.codewithkael.webrtcprojectforrecord.models.MessageModel
+import com.codewithkael.webrtcprojectforrecord.models.*
+import com.codewithkael.webrtcprojectforrecord.models.SentWebRtcEventType.SEND_ANSWER
+import com.codewithkael.webrtcprojectforrecord.models.SentWebRtcEventType.SEND_OFFER
 import org.webrtc.*
 
-class RTCClient(
+class WebRtcClient(
     private val application: Application,
     private val username: String,
     private val socketRepository: SocketRepository,
@@ -122,16 +124,9 @@ class RTCClient(
                     }
 
                     override fun onSetSuccess() {
-                        val offer = hashMapOf(
-                            "sdp" to desc?.description,
-                            "type" to desc?.type
-                        )
-
-                        socketRepository.sendMessageToSocket(
-                            MessageModel(
-                                "create_offer", username, target, offer
-                            )
-                        )
+                        val offer = OfferModel(desc?.type, desc?.description)
+                        val sentWebRtcEvent = SentWebRtcEvent(SEND_OFFER, username, target, offer)
+                        socketRepository.sendMessageToSocket(sentWebRtcEvent)
                     }
 
                     override fun onCreateFailure(p0: String?) {
@@ -184,17 +179,10 @@ class RTCClient(
                     override fun onCreateSuccess(p0: SessionDescription?) {
                     }
 
-
                     override fun onSetSuccess() {
-                        val answer = hashMapOf(
-                            "sdp" to desc?.description,
-                            "type" to desc?.type
-                        )
-                        socketRepository.sendMessageToSocket(
-                            MessageModel(
-                                "create_answer", username, target, answer
-                            )
-                        )
+                        val answer = AnswerModel(desc?.type, desc?.description)
+                        val sentWebRtcEvent = SentWebRtcEvent(SEND_ANSWER, username, target, answer)
+                        socketRepository.sendMessageToSocket(sentWebRtcEvent)
                     }
 
                     override fun onCreateFailure(p0: String?) {
@@ -240,7 +228,6 @@ class RTCClient(
     }
 
     private fun cleanUp() {
-        peerConnection?.close()
         peerConnection?.dispose()
 
         videoCapturer?.dispose()

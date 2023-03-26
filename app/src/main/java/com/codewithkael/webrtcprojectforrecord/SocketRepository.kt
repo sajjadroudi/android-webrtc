@@ -4,6 +4,9 @@ import android.util.Log
 import com.codewithkael.webrtcprojectforrecord.Config.SERVER_IP
 import com.codewithkael.webrtcprojectforrecord.Config.SERVER_PORT
 import com.codewithkael.webrtcprojectforrecord.models.MessageModel
+import com.codewithkael.webrtcprojectforrecord.models.SentWebRtcEvent
+import com.codewithkael.webrtcprojectforrecord.models.SentWebRtcEventType.REGISTER_USER
+import com.codewithkael.webrtcprojectforrecord.models.SentWebRtcEventType.UNREGISTER_USER
 import com.codewithkael.webrtcprojectforrecord.utils.NewMessageInterface
 import com.google.gson.Gson
 import org.java_websocket.client.WebSocketClient
@@ -25,11 +28,8 @@ class SocketRepository (private val messageInterface: NewMessageInterface) {
 
         webSocket = object : WebSocketClient(URI("ws://${serverIp ?: SERVER_IP}:${serverPort ?: SERVER_PORT}")) {
             override fun onOpen(handshakedata: ServerHandshake?) {
-                sendMessageToSocket(
-                    MessageModel(
-                        "store_user",username,null,null
-                    )
-                )
+                val sentWebRtcEvent = SentWebRtcEvent<Nothing>(REGISTER_USER, userName!!)
+                sendMessageToSocket(sentWebRtcEvent)
             }
 
             override fun onMessage(message: String?) {
@@ -44,6 +44,8 @@ class SocketRepository (private val messageInterface: NewMessageInterface) {
 
             override fun onClose(code: Int, reason: String?, remote: Boolean) {
                 Log.d(TAG, "onClose: $reason")
+                val sentWebRtcEvent = SentWebRtcEvent<Nothing>(UNREGISTER_USER, userName!!)
+                sendMessageToSocket(sentWebRtcEvent)
             }
 
             override fun onError(ex: Exception?) {
@@ -55,10 +57,10 @@ class SocketRepository (private val messageInterface: NewMessageInterface) {
 
     }
 
-    fun sendMessageToSocket(message: MessageModel) {
+    fun <T> sendMessageToSocket(message: SentWebRtcEvent<T>) {
         try {
             Log.d(TAG, "sendMessageToSocket: $message")
-            webSocket?.send(Gson().toJson(message))
+            webSocket?.send(gson.toJson(message))
         } catch (e: Exception) {
             Log.d(TAG, "sendMessageToSocket: $e")
         }

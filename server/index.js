@@ -15,12 +15,19 @@ webSocket.on('request',(req)=>{
    
 
     connection.on('message',(message)=>{
-        const data = JSON.parse(message.utf8Data)
+        const receivedData = JSON.parse(message.utf8Data)
+        const data = {
+            type: receivedData.type.toLowerCase(),
+            name: receivedData.originUserName,
+            target: receivedData.targetUserName,
+            data: receivedData.data
+        }
+
         console.log(data);
         const user = findUser(data.name)
        
         switch(data.type){
-            case "store_user":
+            case "register_user":
                 if(user !=null){
                     //our user exists
                     connection.send(JSON.stringify({
@@ -51,7 +58,7 @@ webSocket.on('request',(req)=>{
 
             break
             
-            case "create_offer":
+            case "send_offer":
                 let userToReceiveOffer = findUser(data.target)
 
                 if (userToReceiveOffer){
@@ -63,7 +70,7 @@ webSocket.on('request',(req)=>{
                 }
             break
                 
-            case "create_answer":
+            case "send_answer":
                 let userToReceiveAnswer = findUser(data.target)
                 if(userToReceiveAnswer){
                     userToReceiveAnswer.conn.send(JSON.stringify({
@@ -109,6 +116,10 @@ webSocket.on('request',(req)=>{
                     }))
                 }
 
+            break;
+
+            case "unregister_user":
+                // TODO
             break;
 
         }
