@@ -252,22 +252,11 @@ class RTCClient(
         localView.release()
         remoteView.release()
 
-        tryToDo { localAudioTrack?.dispose() }
-        tryToDo { localVideoTrack?.dispose() }
-
         eglContext.release()
 
         peerConnectionFactory.dispose()
 
         surfaceTextureHelper?.dispose()
-    }
-
-    private fun tryToDo(block: () -> Unit) {
-        try {
-            block()
-        } catch (th: Throwable) {
-            th.printStackTrace()
-        }
     }
 
 }
