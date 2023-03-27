@@ -44,7 +44,7 @@ class CallActivity : AppCompatActivity() {
     private fun initWebRtcClient() {
         rtcClient = null
 
-        rtcClient = WebRtcClient(application,userName!!,socketRepository!!, binding.localView, binding.remoteView, object : PeerConnectionObserver() {
+        rtcClient = WebRtcClient(application,userName!!, binding.localView, binding.remoteView, object : PeerConnectionObserver() {
             override fun onIceCandidate(p0: IceCandidate?) {
                 super.onIceCandidate(p0)
                 rtcClient?.addIceCandidate(p0)
@@ -149,7 +149,9 @@ class CallActivity : AppCompatActivity() {
                                     rtcClient?.setupLocalView()
                                     rtcClient?.setupRemoteView()
                                     rtcClient?.startLocalVideo()
-                                    rtcClient?.call(targetUserNameEt.text.toString())
+                                    rtcClient?.call(targetUserNameEt.text.toString()) {
+                                        socketRepository?.sendMessageToSocket(it)
+                                    }
                                 }
                                 hideKeyboard(binding.targetUserNameEt)
                             }
@@ -192,7 +194,9 @@ class CallActivity : AppCompatActivity() {
                                     event.data.toString()
                                 )
                                 rtcClient?.onRemoteSessionReceived(session)
-                                rtcClient?.answer(event.originUserName)
+                                rtcClient?.answer(event.originUserName) {
+                                    socketRepository?.sendMessageToSocket(it)
+                                }
                                 target = event.originUserName
                                 binding.remoteViewLoading.visibility = View.GONE
                             }

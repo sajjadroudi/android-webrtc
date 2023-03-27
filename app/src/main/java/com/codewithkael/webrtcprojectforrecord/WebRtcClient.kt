@@ -9,7 +9,6 @@ import org.webrtc.*
 class WebRtcClient(
     private val application: Application,
     private val username: String,
-    private val socketRepository: SocketRepository,
     private val localView: SurfaceViewRenderer,
     private val remoteView: SurfaceViewRenderer,
     private val observer: PeerConnection.Observer
@@ -112,7 +111,7 @@ class WebRtcClient(
         }
     }
 
-    fun call(target: String) {
+    fun call(target: String, sendingOfferCallback: (SentWebRtcEvent<OfferModel>) -> Unit) {
         val mediaConstraints = MediaConstraints()
         mediaConstraints.mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
 
@@ -126,7 +125,7 @@ class WebRtcClient(
                     override fun onSetSuccess() {
                         val offer = OfferModel(desc?.type, desc?.description)
                         val sentWebRtcEvent = SentWebRtcEvent(SEND_OFFER, username, target, offer)
-                        socketRepository.sendMessageToSocket(sentWebRtcEvent)
+                        sendingOfferCallback.invoke(sentWebRtcEvent)
                     }
 
                     override fun onCreateFailure(p0: String?) {
@@ -169,7 +168,7 @@ class WebRtcClient(
 
     }
 
-    fun answer(target: String) {
+    fun answer(target: String, sendingAnswerCallback: (SentWebRtcEvent<AnswerModel>) -> Unit) {
         val constraints = MediaConstraints()
         constraints.mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
 
@@ -182,7 +181,7 @@ class WebRtcClient(
                     override fun onSetSuccess() {
                         val answer = AnswerModel(desc?.type, desc?.description)
                         val sentWebRtcEvent = SentWebRtcEvent(SEND_ANSWER, username, target, answer)
-                        socketRepository.sendMessageToSocket(sentWebRtcEvent)
+                        sendingAnswerCallback.invoke(sentWebRtcEvent)
                     }
 
                     override fun onCreateFailure(p0: String?) {
