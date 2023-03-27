@@ -1,6 +1,9 @@
 package com.codewithkael.webrtcprojectforrecord
 
+import android.content.Context
 import android.os.Build
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 
 fun isRunningOnEmulator(): Boolean {
     return ((Build.MANUFACTURER == "Google" && Build.BRAND == "google" &&
@@ -27,4 +30,9 @@ fun isRunningOnEmulator(): Boolean {
             //MSI App Player
             || Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")
             || Build.PRODUCT == "google_sdk")
+}
+
+fun Context.hideKeyboard(view: View) {
+    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    imm.hideSoftInputFromWindow(view.windowToken, 0)
 }

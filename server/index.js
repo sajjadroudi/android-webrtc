@@ -16,19 +16,13 @@ webSocket.on('request',(req)=>{
 
     connection.on('message',(message)=>{
         const receivedData = JSON.parse(message.utf8Data)
-        const data = {
-            type: receivedData.type.toLowerCase(),
-            name: receivedData.originUserName,
-            target: receivedData.targetUserName,
-            data: receivedData.data
-        }
 
-        console.log(data);
-        const user = findUser(data.name)
+        console.log(receivedData);
+        const user = findUser(receivedData.originUserName)
        
-        switch(data.type){
-            case "register_user":
-                if(user !=null){
+        switch(receivedData.type){
+            case "REGISTER_USER":
+                if(user != null){
                     //our user exists
                     connection.send(JSON.stringify({
                         type:'user already exists'
@@ -38,87 +32,90 @@ webSocket.on('request',(req)=>{
                 }
 
                 const newUser = {
-                    name:data.name, conn: connection
+                    name: receivedData.originUserName, 
+                    conn: connection
                 }
                 users.push(newUser)
             break
 
-            case "start_call":
-                let userToCall = findUser(data.target)
+            case "START_CALL":
+                const userToCall = findUser(receivedData.targetUserName)
 
-                if(userToCall){
+                if(userToCall) {
                     connection.send(JSON.stringify({
-                        type:"call_response", data:"user is ready for call"
+                        type: "CALL_RESPONSE", 
+                        isSuccessful: true
                     }))
-                } else{
+                } else {
                     connection.send(JSON.stringify({
-                        type:"call_response", data:"user is not online"
+                        type: "CALL_RESPONSE", 
+                        isSuccessful: false
                     }))
                 }
 
             break
             
-            case "send_offer":
-                let userToReceiveOffer = findUser(data.target)
+            case "SEND_OFFER":
+                let userToReceiveOffer = findUser(receivedData.targetUserName)
 
                 if (userToReceiveOffer){
                     userToReceiveOffer.conn.send(JSON.stringify({
-                        type:"offer_received",
-                        name:data.name,
-                        data:data.data.sdp
+                        type: "OFFER_RECEIVED",
+                        originUserName: receivedData.originUserName,
+                        data: receivedData.data.sdp
                     }))
                 }
             break
                 
-            case "send_answer":
-                let userToReceiveAnswer = findUser(data.target)
+            case "SEND_ANSWER":
+                let userToReceiveAnswer = findUser(receivedData.targetUserName)
                 if(userToReceiveAnswer){
                     userToReceiveAnswer.conn.send(JSON.stringify({
-                        type:"answer_received",
-                        name: data.name,
-                        data:data.data.sdp
+                        type: "ANSWER_RECEIVED",
+                        originUserName: receivedData.originUserName,
+                        data: receivedData.data.sdp
                     }))
                 }
             break
 
-            case "ice_candidate":
-                let userToReceiveIceCandidate = findUser(data.target)
+            case "ICE_CANDIDATE":
+                let userToReceiveIceCandidate = findUser(receivedData.targetUserName)
                 if(userToReceiveIceCandidate){
                     userToReceiveIceCandidate.conn.send(JSON.stringify({
-                        type:"ice_candidate",
-                        name:data.name,
+                        type:"ICE_CANDIDATE",
+                        originUserName: receivedData.originUserName,
                         data:{
-                            sdpMLineIndex:data.data.sdpMLineIndex,
-                            sdpMid:data.data.sdpMid,
-                            sdpCandidate: data.data.sdpCandidate
+                            sdpMLineIndex: receivedData.data.sdpMLineIndex,
+                            sdpMid: receivedData.data.sdpMid,
+                            sdpCandidate: receivedData.data.sdpCandidate
                         }
                     }))
                 }
             break
 
-            case "reject":
-                let rejectedUser = findUser(data.target)
+            case "REJECT":
+                let rejectedUser = findUser(receivedData.targetUserName)
 
                 if (rejectedUser){
                     rejectedUser.conn.send(JSON.stringify({
-                        type:"call_rejected"
+                        type:"CALL_REJECTED"
                     }))
                 }
 
             break
 
-            case "end_call":
-                const targetUser = findUser(data.target)
+            case "END_CALL":
+                const targetUser = findUser(receivedData.targetUserName)
                 
                 if(targetUser) {
                     targetUser.conn.send(JSON.stringify({
-                        type: "call_ended"
+                        type: "CALL_ENDED"
                     }))
                 }
 
             break;
 
-            case "unregister_user":
+            case "UNREGISTER_USER":
                 // TODO
             break;
 
@@ -133,10 +130,6 @@ webSocket.on('request',(req)=>{
             }
         })
     })
-
-
-
-
 
 })
 

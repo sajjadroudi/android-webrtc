@@ -3,17 +3,17 @@ package com.codewithkael.webrtcprojectforrecord
 import android.util.Log
 import com.codewithkael.webrtcprojectforrecord.Config.SERVER_IP
 import com.codewithkael.webrtcprojectforrecord.Config.SERVER_PORT
-import com.codewithkael.webrtcprojectforrecord.models.MessageModel
+import com.codewithkael.webrtcprojectforrecord.models.ReceivedWebRtcEvent
 import com.codewithkael.webrtcprojectforrecord.models.SentWebRtcEvent
 import com.codewithkael.webrtcprojectforrecord.models.SentWebRtcEventType.REGISTER_USER
 import com.codewithkael.webrtcprojectforrecord.models.SentWebRtcEventType.UNREGISTER_USER
-import com.codewithkael.webrtcprojectforrecord.utils.NewMessageInterface
+import com.codewithkael.webrtcprojectforrecord.utils.OnNewMessageListener
 import com.google.gson.Gson
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
 
-class SocketRepository (private val messageInterface: NewMessageInterface) {
+class SocketRepository (private val onNewMessageListener: OnNewMessageListener) {
     private var webSocket: WebSocketClient? = null
     private var userName: String? = null
     private val TAG = "SocketRepository"
@@ -34,7 +34,8 @@ class SocketRepository (private val messageInterface: NewMessageInterface) {
 
             override fun onMessage(message: String?) {
                 try {
-                    messageInterface.onNewMessage(gson.fromJson(message,MessageModel::class.java))
+                    val event = gson.fromJson(message, ReceivedWebRtcEvent::class.java)
+                    onNewMessageListener.onNewMessage(event)
 
                 }catch (e:Exception){
                     e.printStackTrace()
