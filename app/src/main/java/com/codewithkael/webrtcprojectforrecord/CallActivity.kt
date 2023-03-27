@@ -25,7 +25,7 @@ class CallActivity : AppCompatActivity() {
     private var serverIp:String?=null
     private var serverPort:String?=null
     private var socketRepository:SocketRepository?=null
-    private var rtcClient : WebRtcClient?=null
+    private val rtcClient : WebRtcClientWrapper by lazy { buildWebRtcClientWrapper() }
     private val TAG = "CallActivity"
     private var target:String = ""
     private val gson = Gson()
@@ -41,13 +41,11 @@ class CallActivity : AppCompatActivity() {
         init()
     }
 
-    private fun initWebRtcClient() {
-        rtcClient = null
-
-        rtcClient = WebRtcClient(application,userName!!, binding.localView, binding.remoteView, object : PeerConnectionObserver() {
+    private fun buildWebRtcClientWrapper(): WebRtcClientWrapper {
+        return WebRtcClientWrapper(application,userName!!, binding.localView, binding.remoteView, object : PeerConnectionObserver() {
             override fun onIceCandidate(p0: IceCandidate?) {
                 super.onIceCandidate(p0)
-                rtcClient?.addIceCandidate(p0)
+                rtcClient.addIceCandidate(p0)
 
                 val iceCandidate = IceCandidateModel(p0?.sdpMid, p0?.sdpMLineIndex, p0?.sdp)
                 val sentWebRtcEvent = SentWebRtcEvent(ICE_CANDIDATE, userName!!, target, iceCandidate)
@@ -126,8 +124,7 @@ class CallActivity : AppCompatActivity() {
                 val sentWebRtcEvent = SentWebRtcEvent<Nothing>(END_CALL, userName!!, target)
                 socketRepository?.sendMessageToSocket(sentWebRtcEvent)
 
-                rtcClient?.endCall()
-                rtcClient = null
+                rtcClient.endCall()
             }
         }
 
@@ -145,11 +142,11 @@ class CallActivity : AppCompatActivity() {
                                 setWhoToCallLayoutGone()
                                 setCallLayoutVisible()
                                 binding.apply {
-                                    initWebRtcClient()
-                                    rtcClient?.setupLocalView()
-                                    rtcClient?.setupRemoteView()
-                                    rtcClient?.startLocalVideo()
-                                    rtcClient?.call(targetUserNameEt.text.toString()) {
+                                    rtcClient.initialize()
+                                    rtcClient.setupLocalView()
+                                    rtcClient.setupRemoteView()
+                                    rtcClient.startLocalVideo()
+                                    rtcClient.call(targetUserNameEt.text.toString()) {
                                         socketRepository?.sendMessageToSocket(it)
                                     }
                                 }
@@ -166,7 +163,7 @@ class CallActivity : AppCompatActivity() {
                             SessionDescription.Type.ANSWER,
                             event.data.toString()
                         )
-                        rtcClient?.onRemoteSessionReceived(session)
+                        rtcClient.onRemoteSessionReceived(session)
                         runOnUiThread {
                             binding.remoteViewLoading.visibility = View.GONE
                         }
@@ -183,18 +180,18 @@ class CallActivity : AppCompatActivity() {
                                 setWhoToCallLayoutGone()
 
                                 binding.apply {
-                                    initWebRtcClient()
-                                    rtcClient?.setupLocalView()
-                                    rtcClient?.setupRemoteView()
-                                    rtcClient?.startLocalVideo()
+                                    rtcClient.initialize()
+                                    rtcClient.setupLocalView()
+                                    rtcClient.setupRemoteView()
+                                    rtcClient.startLocalVideo()
                                 }
 
                                 val session = SessionDescription(
                                     SessionDescription.Type.OFFER,
                                     event.data.toString()
                                 )
-                                rtcClient?.onRemoteSessionReceived(session)
-                                rtcClient?.answer(event.originUserName) {
+                                rtcClient.onRemoteSessionReceived(session)
+                                rtcClient.answer(event.originUserName) {
                                     socketRepository?.sendMessageToSocket(it)
                                 }
                                 target = event.originUserName
@@ -202,8 +199,7 @@ class CallActivity : AppCompatActivity() {
                             }
 
                             binding.rejectButton.setOnClickListener {
-                                rtcClient?.endCall()
-                                rtcClient = null
+                                rtcClient.endCall()
 
                                 val rejectedUser = event.originUserName
                                 val sentWebRtcEvent = SentWebRtcEvent<Nothing>(REJECT, userName!!, rejectedUser)
@@ -236,8 +232,7 @@ class CallActivity : AppCompatActivity() {
                             setWhoToCallLayoutVisible()
                         }
 
-                        rtcClient?.endCall()
-                        rtcClient = null
+                        rtcClient.endCall()
                     }
                 }
             }
