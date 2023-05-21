@@ -19,32 +19,35 @@ class WebRtcClientWrapper(
 
     private var webRtcClient : WebRtcClient? = null
 
+    val isInCall : Boolean
+        get() = (webRtcClient != null)
+
     fun initialize() {
         webRtcClient = WebRtcClient(application, username, localView, remoteView, observer)
     }
 
-    fun setupLocalView() {
-        webRtcClient?.setupLocalView()
+    fun setupLocalVideoView() {
+        webRtcClient?.setupLocalVideoView()
     }
 
-    fun setupRemoteView() {
-        webRtcClient?.setupRemoteView()
+    fun setupRemoteVideoView() {
+        webRtcClient?.setupRemoteVideoView()
     }
 
     fun startLocalVideo() {
         webRtcClient?.startLocalVideo()
     }
 
-    fun call(target: String, sendingOfferCallback: (SentWebRtcEvent<OfferModel>) -> Unit) {
-        webRtcClient?.call(target, sendingOfferCallback)
+    fun call(target: String, sendingOfferBlock: (SentWebRtcEvent<OfferModel>) -> Unit) {
+        webRtcClient?.call(target, sendingOfferBlock)
     }
 
     fun onRemoteSessionReceived(session: SessionDescription) {
         webRtcClient?.onRemoteSessionReceived(session)
     }
 
-    fun answer(target: String, sendingAnswerCallback: (SentWebRtcEvent<AnswerModel>) -> Unit) {
-        webRtcClient?.answer(target, sendingAnswerCallback)
+    fun answer(target: String, sendingAnswerBlock: (SentWebRtcEvent<AnswerModel>) -> Unit) {
+        webRtcClient?.answer(target, sendingAnswerBlock)
     }
 
     fun addIceCandidate(p0: IceCandidate?) {

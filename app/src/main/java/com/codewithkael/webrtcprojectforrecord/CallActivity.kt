@@ -78,7 +78,7 @@ class CallActivity : AppCompatActivity() {
             }
 
             switchCameraButton.setOnClickListener {
-                rtcClient?.switchCamera()
+                rtcClient.switchCamera()
             }
 
             micButton.setOnClickListener {
@@ -89,7 +89,7 @@ class CallActivity : AppCompatActivity() {
                     isMute = true
                     micButton.setImageResource(R.drawable.ic_baseline_mic_24)
                 }
-                rtcClient?.toggleAudio(isMute)
+                rtcClient.toggleAudio(isMute)
             }
 
             videoButton.setOnClickListener {
@@ -100,7 +100,7 @@ class CallActivity : AppCompatActivity() {
                     isCameraPause = true
                     videoButton.setImageResource(R.drawable.ic_baseline_videocam_24)
                 }
-                rtcClient?.toggleCamera(isCameraPause)
+                rtcClient.toggleCamera(isCameraPause)
             }
 
             audioOutputButton.setOnClickListener {
@@ -143,8 +143,8 @@ class CallActivity : AppCompatActivity() {
                                 setCallLayoutVisible()
                                 binding.apply {
                                     rtcClient.initialize()
-                                    rtcClient.setupLocalView()
-                                    rtcClient.setupRemoteView()
+                                    rtcClient.setupLocalVideoView()
+                                    rtcClient.setupRemoteVideoView()
                                     rtcClient.startLocalVideo()
                                     rtcClient.call(targetUserNameEt.text.toString()) {
                                         socketRepository?.sendMessageToSocket(it)
@@ -181,8 +181,8 @@ class CallActivity : AppCompatActivity() {
 
                                 binding.apply {
                                     rtcClient.initialize()
-                                    rtcClient.setupLocalView()
-                                    rtcClient.setupRemoteView()
+                                    rtcClient.setupLocalVideoView()
+                                    rtcClient.setupRemoteVideoView()
                                     rtcClient.startLocalVideo()
                                 }
 
@@ -219,7 +219,7 @@ class CallActivity : AppCompatActivity() {
                                 sdpMLineIndex,
                                 receivingCandidate.sdpCandidate
                             )
-                            rtcClient?.addIceCandidate(iceCandidate)
+                            rtcClient.addIceCandidate(iceCandidate)
                         } catch (e:Exception){
                             e.printStackTrace()
                         }

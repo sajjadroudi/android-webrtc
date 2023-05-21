@@ -64,11 +64,11 @@ class WebRtcClient(
         return peerConnectionFactory.createPeerConnection(iceServer, observer)
     }
 
-    fun setupLocalView() {
+    fun setupLocalVideoView() {
         initializeSurfaceView(localView)
     }
 
-    fun setupRemoteView() {
+    fun setupRemoteVideoView() {
         initializeSurfaceView(remoteView)
     }
 
