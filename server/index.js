@@ -46,6 +46,11 @@ webSocket.on('request',(req)=>{
                         type: "CALL_RESPONSE", 
                         isSuccessful: true
                     }))
+
+                    userToCall.conn.send(JSON.stringify({
+                        type: "CONFIG",
+                        originUserName: receivedData.originUserName
+                    }))
                 } else {
                     connection.send(JSON.stringify({
                         type: "CALL_RESPONSE", 

@@ -146,9 +146,6 @@ class CallActivity : AppCompatActivity() {
                                     rtcClient.setupLocalVideoView()
                                     rtcClient.setupRemoteVideoView()
                                     rtcClient.startLocalVideo()
-                                    rtcClient.call(targetUserNameEt.text.toString()) {
-                                        socketRepository?.sendMessageToSocket(it)
-                                    }
                                 }
                                 hideKeyboard(binding.targetUserNameEt)
                             }
@@ -158,17 +155,7 @@ class CallActivity : AppCompatActivity() {
                             }
                         }
                     }
-                    ANSWER_RECEIVED -> {
-                        val session = SessionDescription(
-                            SessionDescription.Type.ANSWER,
-                            event.data.toString()
-                        )
-                        rtcClient.onRemoteSessionReceived(session)
-                        runOnUiThread {
-                            binding.remoteViewLoading.visibility = View.GONE
-                        }
-                    }
-                    OFFER_RECEIVED -> {
+                    CONFIG -> {
                         runOnUiThread {
                             setIncomingCallLayoutVisible()
 
@@ -186,14 +173,10 @@ class CallActivity : AppCompatActivity() {
                                     rtcClient.startLocalVideo()
                                 }
 
-                                val session = SessionDescription(
-                                    SessionDescription.Type.OFFER,
-                                    event.data.toString()
-                                )
-                                rtcClient.onRemoteSessionReceived(session)
-                                rtcClient.answer(event.originUserName) {
+                                rtcClient.call(event.originUserName) {
                                     socketRepository?.sendMessageToSocket(it)
                                 }
+
                                 target = event.originUserName
                                 binding.remoteViewLoading.visibility = View.GONE
                             }
@@ -208,6 +191,28 @@ class CallActivity : AppCompatActivity() {
                                 setIncomingCallLayoutGone()
                             }
 
+                        }
+                    }
+                    ANSWER_RECEIVED -> {
+                        val session = SessionDescription(
+                            SessionDescription.Type.ANSWER,
+                            event.data.toString()
+                        )
+                        rtcClient.onRemoteSessionReceived(session)
+                    }
+                    OFFER_RECEIVED -> {
+                        val session = SessionDescription(
+                            SessionDescription.Type.OFFER,
+                            event.data.toString()
+                        )
+                        rtcClient.onRemoteSessionReceived(session)
+
+                        rtcClient.answer(event.originUserName) {
+                            socketRepository?.sendMessageToSocket(it)
+                        }
+
+                        runOnUiThread {
+                            binding.remoteViewLoading.visibility = View.GONE
                         }
                     }
                     ReceivedWebRtcEventType.ICE_CANDIDATE -> {
